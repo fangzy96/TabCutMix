@@ -37,8 +37,7 @@ def main(args):
         model_params=raw_config['model_params'],
         T_dict=raw_config['train']['T'],
         num_numerical_features=raw_config['num_numerical_features'],
-        device=device,
-        args=args
+        device=device
     )
 
 if __name__ == '__main__':

@@ -18,9 +18,6 @@ def main(args):
     args.train = True
     
     raw_config = src.load_config(config_path)
-    print(args)
-    print('----------------------------------')
-    print(raw_config)
 
     ''' 
     Modification of configs
