@@ -91,41 +91,40 @@ def plot_memorization_distribution():
     font_size = 32
 
     for i, dataname in enumerate(datasets):
-        # 普通数据路径
+
         real_data_path = f'results/distribution/{dataname}/real.csv'
         generated_data_path = f'results/distribution/{dataname}/tabsyn.csv'
 
-        # TabCutMix 数据路径
+
         generated_data_path_tabcutmix = f'results/distribution/{dataname}_tabcutmix/tabsyn_tabcutmix.csv'
         real_data_path_tabcutmix = f'results/distribution/{dataname}_tabcutmix/real_100.csv'
 
 
-        # 读取数据
         real_data = pd.read_csv(real_data_path)
         generated_data = pd.read_csv(generated_data_path)
         real_data_tabcutmix = pd.read_csv(real_data_path_tabcutmix)
         generated_data_tabcutmix = pd.read_csv(generated_data_path_tabcutmix)
 
-        # 计算 memorization ratios
+
         replicate_ratios = cal_memorization(dataname, generated_data, real_data)
         replicate_ratios_tabcutmix = cal_memorization(dataname, generated_data_tabcutmix, real_data_tabcutmix)
 
-        # 绘制普通数据的直方图，并进行归一化
+
         counts, bins = np.histogram(replicate_ratios, bins=20)
         normalized_counts = counts / counts.sum()  # 归一化处理
         axes[i].bar(bins[:-1], normalized_counts, width=np.diff(bins), edgecolor="black", align="edge",
                     color='coral', alpha=0.7, label=f'TabSyn (Ratio: {ratios[dataname]})')
 
-        # 绘制 TabCutMix 数据的直方图，并进行归一化
+
         counts_tabcutmix, bins_tabcutmix = np.histogram(replicate_ratios_tabcutmix, bins=20)
         normalized_counts_tabcutmix = counts_tabcutmix / counts_tabcutmix.sum()  # 归一化处理
         axes[i].bar(bins_tabcutmix[:-1], normalized_counts_tabcutmix, width=np.diff(bins_tabcutmix),
                     edgecolor="black", align="edge", color='skyblue', alpha=0.7, label=f'TabCutMix (Ratio: {tabcutmix_ratios[dataname]})')
 
-        # 添加 x=1/3 的虚线
+
         axes[i].axvline(x=1 / 3, color='orange', linestyle='--', linewidth=3)
 
-        # 设置图的标题
+
         axes[i].set_title(f'{dataname.capitalize()}', fontsize=font_size)
         axes[i].set_xlabel('Distance Ratio', fontsize=font_size)
         axes[i].set_ylabel('Density', fontsize=font_size)
