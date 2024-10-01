@@ -1,3 +1,10 @@
+## Acknowledgements
+
+This project was built upon code from [TabSyn](https://github.com/amazon-science/tabsyn). We are deeply grateful for their open-source contributions, which have significantly helped shape the development of this project.
+
+Specifically, many of the model components in this repository are based on the foundation provided by [TabSyn](https://github.com/amazon-science/tabsyn). We highly recommend checking out their work for further insights.
+
+
 ## Installing Dependencies
 
 Python version: 3.10
