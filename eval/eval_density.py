@@ -69,7 +69,7 @@ if __name__ == '__main__':
     else:
         syn_path = args.path
 
-    real_path = f'synthetic/{dataname}/real.csv'
+    real_path = f'synthetic/{dataname}/real_100.csv'
 
     data_dir = f'data/{dataname}' 
     print(syn_path)
@@ -112,9 +112,9 @@ if __name__ == '__main__':
 
     shapes = qual_report.get_details(property_name='Column Shapes')
     trends = qual_report.get_details(property_name='Column Pair Trends')
-    coverages = diag_report.get_details('Coverage')
+    # coverages = diag_report.get_details('Coverage')
 
 
     shapes.to_csv(f'{save_dir}/shape.csv')
     trends.to_csv(f'{save_dir}/trend.csv')
-    coverages.to_csv(f'{save_dir}/coverage.csv')
+    # coverages.to_csv(f'{save_dir}/coverage.csv')
