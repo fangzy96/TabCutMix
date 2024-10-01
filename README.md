@@ -1,3 +1,5 @@
+# (ICLR 2025 Submission) Unveiling Memorization in Diffusion Models for Tabular Data
+
 ## Acknowledgements
 
 This project was built upon code from [TabSyn](https://github.com/amazon-science/tabsyn). We are deeply grateful for their open-source contributions, which have significantly helped shape the development of this project.
@@ -45,8 +47,6 @@ pip install category_encoders
 
 ## Preparing Datasets
 
-### Using the datasets adopted in the paper
-
 Download raw dataset:
 
 ```
@@ -58,6 +58,13 @@ Process dataset:
 ```
 python process_dataset.py
 ```
+uncomment line 170 for different train sizes
+
+Process dataset for different feature dimensions:
+```
+python remove_features.py
+python process_dataset.py
+```
 
 ## Training Models
 
@@ -67,8 +74,8 @@ For baseline methods, use the following command for training:
 python main.py --dataname [NAME_OF_DATASET] --method [NAME_OF_BASELINE_METHODS] --mode train
 ```
 
-Options of [NAME_OF_DATASET]: adult, default, shoppers, magic, beijing, news
-Options of [NAME_OF_BASELINE_METHODS]: smote, goggle, great, stasy, codi, tabddpm
+Options of [NAME_OF_DATASET]: adult, default, shoppers, magic
+Options of [NAME_OF_BASELINE_METHODS]: stay, tabddpm
 
 For Tabsyn, use the following command for training:
 
@@ -92,10 +99,15 @@ For Tabsyn, use the following command for synthesis:
 
 ```
 python main.py --dataname [NAME_OF_DATASET] --method tabsyn --mode sample --save_path [PATH_TO_SAVE]
-
 ```
 
 The default save path is "synthetic/[NAME_OF_DATASET]/[METHOD_NAME].csv"
+
+## Memorization Ratio
+
+```
+python cal_memorization.py
+```
 
 ## Evaluation
 We evaluate the quality of synthetic data using metrics from various aspects.
@@ -121,4 +133,20 @@ python eval/eval_quality.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] -
 python eval/eval_mle.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] --path [PATH_TO_SYNTHETIC_DATA]
 ```
 
+## Visualization
+```
+python plot_replicate_epoch.py
+python plot_replicate_train_size.py
+python plot_replicate_feature.py
+python plot_replicate_cutmix_threshold.py
+python plot_memorization_distribute_merge.py
+python plot_memorization_visualization.py
+python plot_heatmap.py
+python plot_shape_bar.py
+```
+
+## Case Study
+```
+python case_study.py
+```
 
