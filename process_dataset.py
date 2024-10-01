@@ -21,61 +21,6 @@ parser = argparse.ArgumentParser(description='process dataset')
 parser.add_argument('--dataname', type=str, default=None, help='Name of dataset.')
 args = parser.parse_args()
 
-def preprocess_beijing():
-    with open(f'{INFO_PATH}/beijing.json', 'r') as f:
-        info = json.load(f)
-    
-    data_path = info['raw_data_path']
-
-    data_df = pd.read_csv(data_path)
-    columns = data_df.columns
-
-    data_df = data_df[columns[1:]]
-
-
-    df_cleaned = data_df.dropna()
-    df_cleaned.to_csv(info['data_path'], index = False)
-
-def preprocess_news():
-    with open(f'{INFO_PATH}/news.json', 'r') as f:
-        info = json.load(f)
-
-    data_path = info['raw_data_path']
-    data_df = pd.read_csv(data_path)
-    data_df = data_df.drop('url', axis=1)
-
-    columns = np.array(data_df.columns.tolist())
-
-    cat_columns1 = columns[list(range(12,18))]
-    cat_columns2 = columns[list(range(30,38))]
-
-    cat_col1 = data_df[cat_columns1].astype(int).to_numpy().argmax(axis = 1)
-    cat_col2 = data_df[cat_columns2].astype(int).to_numpy().argmax(axis = 1)
-
-    data_df = data_df.drop(cat_columns2, axis=1)
-    data_df = data_df.drop(cat_columns1, axis=1)
-
-    data_df['data_channel'] = cat_col1
-    data_df['weekday'] = cat_col2
-    
-    data_save_path = 'data/news/news.csv'
-    data_df.to_csv(f'{data_save_path}', index = False)
-
-    columns = np.array(data_df.columns.tolist())
-    num_columns = columns[list(range(45))]
-    cat_columns = ['data_channel', 'weekday']
-    target_columns = columns[[45]]
-
-    info['num_col_idx'] = list(range(45))
-    info['cat_col_idx'] = [46, 47]
-    info['target_col_idx'] = [45]
-    info['data_path'] = data_save_path
-    
-    name = 'news'
-    with open(f'{INFO_PATH}/{name}.json', 'w') as file:
-        json.dump(info, file, indent=4)
-
-
 def get_column_name_mapping(data_df, num_col_idx, cat_col_idx, target_col_idx, column_names = None):
     
     if not column_names:
@@ -146,11 +91,6 @@ def train_val_test_split(data_df, cat_columns, num_train = 0, num_test = 0):
 
 def process_data(name):
 
-    if name == 'news':
-        preprocess_news()
-    elif name == 'beijing':
-        preprocess_beijing()
-
     with open(f'{INFO_PATH}/{name}.json', 'r') as f:
         info = json.load(f)
 
@@ -196,7 +136,7 @@ def process_data(name):
                         save_line = line.strip('\n').strip('.')
                         f1.write(f'{save_line}\n')
 
-        test_df = pd.read_csv(test_save_path, header = None)
+        test_df = pd.read_csv(test_save_path)
         train_df = data_df
 
     else:  
@@ -208,6 +148,7 @@ def process_data(name):
         train_df, test_df, seed = train_val_test_split(data_df, cat_columns, num_train, num_test)
         # print(data_df)
         # print(train_df)
+
     """ cutmix """
     print(data_df.columns)
     print(train_df.shape)
@@ -223,18 +164,19 @@ def process_data(name):
     elif name == 'magic':
         label_idx = 10
         num_new_samples = int(train_df.shape[0] * 2.0)
-    # train_df = cutmix_tabular(train_df, label_idx, num_new_samples)
+    train_df = cutmix_tabular(train_df, label_idx, num_new_samples)
     print(train_df.shape)
 
-    """ only use part of training """
-    # train_percent = 0.1
-    # train_df = train_df.sample(frac=train_percent, random_state=49)
-    # print('num_train', num_train, 'num_test', num_test)
-    # print(train_df)
+    """ use part of training """
+    # train_percent = 0.5
+    # train_df = train_df.sample(frac=train_percent, random_state=50)
+    # train_percent = 0.6  # 30% data
+    # train_df = train_df.sample(frac=train_percent, random_state=50)
+    # train_percent = 0.3333333  # 10% data
+    # train_df = train_df.sample(frac=train_percent, random_state=25)
     print('train_df.shape', train_df.shape)
     print('test_df.shape', test_df.shape)
 
-    # jjj
     train_df.columns = range(len(train_df.columns))
     test_df.columns = range(len(test_df.columns))
 
@@ -282,8 +224,6 @@ def process_data(name):
     for col in cat_columns:
         test_df.loc[test_df[col] == '?', col] = 'nan'
 
-
-    
     X_num_train = train_df[num_columns].to_numpy().astype(np.float32)
     X_cat_train = train_df[cat_columns].to_numpy()
     y_train = train_df[target_columns].to_numpy()
@@ -382,7 +322,6 @@ if __name__ == "__main__":
         process_data(args.dataname)
     else:
         for name in ['adult', 'default', 'shoppers', 'magic']:
-        # for name in ['adult', 'default', 'shoppers', 'magic', 'beijing']:
             process_data(name)
 
         
