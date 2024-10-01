@@ -3,7 +3,8 @@ import torch
 import argparse
 import warnings
 import time
-
+import numpy as np
+import pandas as pd
 from tabsyn.model import MLPDiffusion, Model
 from tabsyn.latent_utils import get_input_generate, recover_data, split_num_cat_target
 from tabsyn.diffusion_utils import sample
@@ -12,6 +13,7 @@ warnings.filterwarnings('ignore')
 
 
 def main(args):
+
     dataname = args.dataname
     device = args.device
     steps = args.steps
@@ -33,7 +35,10 @@ def main(args):
     '''
     start_time = time.time()
 
-    num_samples = train_z.shape[0]
+    # num_samples = train_z.shape[0]
+    train_100_path = f'data/{dataname}/train_100.csv'
+    train_data_100 = pd.read_csv(train_100_path)
+    num_samples = train_data_100.shape[0]
     sample_dim = in_dim
 
     x_next = sample(model.denoise_fn_D, num_samples, sample_dim)
