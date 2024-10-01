@@ -14,144 +14,43 @@ from baselines.tabddpm.models.gaussian_multinomial_distribution import GaussianM
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import json
 
-
-
-# def custom_distance_gpu(X, Y, numerical_cols, categorical_cols):
-#     distances = cp.zeros(X.shape[0])
-#
-#     # 数值特征处理
-#     if numerical_cols:
-#         X_num = cp.array(X[numerical_cols].astype(float).values)
-#         Y_num = cp.array(Y[numerical_cols].astype(float).values).reshape(1, -1)
-#         num_diff = X_num - Y_num
-#         euclidean_distances = cp.sqrt(cp.sum(num_diff ** 2, axis=1))
-#         distances += euclidean_distances
-#
-#     # 分类特征处理
-#     if categorical_cols:
-#         X_cat = cp.array(X[categorical_cols].values)
-#         Y_cat = cp.array(Y[categorical_cols].values).reshape(1, -1)
-#         cat_diff = (X_cat != Y_cat).astype(float)
-#         cat_distances = cat_diff.sum(axis=1)
-#         distances += cat_distances
-#
-#     return distances / (len(numerical_cols) + len(categorical_cols))
-
-# def parallel_custom_distance(X, Y, numerical_cols, categorical_cols):
-#     num_cores = multiprocessing.cpu_count()
-#
-#     results = Parallel(n_jobs=num_cores)(
-#         delayed(custom_distance)(X_chunk, Y, numerical_cols, categorical_cols)
-#         for X_chunk in np.array_split(X, num_cores)
-#     )
-#
-#     return np.concatenate(results)
-
 def custom_distance(X, Y, numerical_cols, categorical_cols):
-    # 初始化距离向量
+
     distances = np.zeros(X.shape[0])
 
-    # 处理数值特征
+
     if numerical_cols:
-        # 确保数值特征为 NumPy 数组并转换为 float 类型
+
         X_num = X[numerical_cols].astype(float).values
         Y_num = Y[numerical_cols].astype(float).values.reshape(1, -1)
         num_diff = X_num - Y_num
         euclidean_distances = np.sqrt(np.sum(num_diff ** 2, axis=1))
 
-        # 对欧氏距离进行归一化
+
         scaler = MinMaxScaler()
         normalized_distances = scaler.fit_transform(euclidean_distances.reshape(-1, 1)).flatten()
         distances += normalized_distances
 
-    # 处理分类特征
+
     if categorical_cols:
-        # 分类特征直接比较
+
         X_cat = X[categorical_cols].values
         Y_cat = Y[categorical_cols].values.reshape(1, -1)
         cat_diff = (X_cat != Y_cat).astype(float)
         cat_distances = cat_diff.sum(axis=1)
         distances += cat_distances
 
-    # 计算平均距离
+
     average_distances = distances / (len(numerical_cols) + len(categorical_cols))
 
     return average_distances
 
-# @jit(nopython=True)
-# def numba_euclidean_distances(X_num, Y_num):
-#     num_diff = X_num - Y_num
-#     euclidean_distances = np.sqrt(np.sum(num_diff ** 2, axis=1))
-#     return euclidean_distances
-#
-# @jit(nopython=True)
-# def custom_distance_numba(X_num, Y_num, X_cat, Y_cat):
-#     distances = np.zeros(X_num.shape[0])
-#
-#     # 处理数值特征的欧氏距离
-#     euclidean_distances = numba_euclidean_distances(X_num, Y_num)
-#
-#     # 简单归一化
-#     max_dist = euclidean_distances.max()
-#     min_dist = euclidean_distances.min()
-#     normalized_distances = (euclidean_distances - min_dist) / (max_dist - min_dist)
-#     distances += normalized_distances
-#
-#     # 处理分类特征
-#     cat_diff = (X_cat != Y_cat).astype(np.float32)
-#     cat_distances = cat_diff.sum(axis=1)
-#     distances += cat_distances
-#
-#     # 计算平均距离
-#     total_features = X_num.shape[1] + X_cat.shape[1]
-#     average_distances = distances / total_features
-#
-#     return average_distances
+
 def cal_memorization(dataname, generated_path, train_data_path):
-    # 加载生成的数据和训练数据
+
     generated_data = pd.read_csv(generated_path)
     # train_data_path = f'data/{dataname}/train_100.csv'
     train_data = pd.read_csv(train_data_path)
-
-    # magic
-    # if dataname == 'magic':
-    #     numerical_cols = ['Length', 'Width', 'Size', 'Conc', 'Conc1', 'Asym', 'M3Long', 'M3Trans', 'Alpha', 'Dist']
-    #     categorical_cols = ['class']
-    # # beijing
-    # elif dataname == 'beijing':
-    #     numerical_cols = ['year', 'month', 'day', 'hour', 'pm2.5', 'DEWP', 'TEMP', 'PRES', 'Iws', 'Is', 'Ir']
-    #     categorical_cols = ['cbwd']
-    # # Shoppers
-    # elif dataname == 'shoppers':
-    #     numerical_cols = [
-    #         'Administrative', 'Administrative_Duration', 'Informational', 'Informational_Duration',
-    #         'ProductRelated', 'ProductRelated_Duration', 'BounceRates', 'ExitRates', 'PageValues',
-    #         'SpecialDay'
-    #     ]
-    #     categorical_cols = [
-    #         'VisitorType', 'Month', 'OperatingSystems', 'Region', 'TrafficType', 'Weekend', 'Browser', 'Revenue'
-    #     ]
-    # # Adult
-    # elif dataname == 'adult':
-    #     numerical_cols = [
-    #         'age', 'fnlwgt', 'education.num', 'capital.gain', 'capital.loss', 'hours.per.week'
-    #     ]
-    #     categorical_cols = [
-    #         'workclass', 'education', 'marital.status', 'occupation', 'relationship',
-    #         'race', 'sex', 'native.country', 'income'
-    #     ]
-    # # Default
-    # elif dataname == 'default':
-    #     numerical_cols = [
-    #         'LIMIT_BAL', 'AGE',
-    #         'BILL_AMT1', 'BILL_AMT2', 'BILL_AMT3', 'BILL_AMT4', 'BILL_AMT5', 'BILL_AMT6',
-    #         'PAY_AMT1', 'PAY_AMT2', 'PAY_AMT3', 'PAY_AMT4', 'PAY_AMT5', 'PAY_AMT6'
-    #     ]
-    #     categorical_cols = [
-    #         'SEX', 'EDUCATION', 'MARRIAGE', 'default payment next month', 'PAY_0', 'PAY_2', 'PAY_3', 'PAY_4', 'PAY_5', 'PAY_6'
-    #     ]
-    # else:
-    #     print('Invalid dataname.')
 
     column_indices = {
         'magic': {
@@ -187,33 +86,30 @@ def cal_memorization(dataname, generated_path, train_data_path):
     categorical_col_names = train_data.columns[categorical_cols].tolist()
     print(numerical_col_names)
     print(categorical_col_names)
-    # 初始化计数器
-    replicate_count = 0  # 记录被视为复制品的样本数量
 
-    # 遍历每一个生成样本
+    replicate_count = 0
+
     for index, W in generated_data.iterrows():
-        # 使用自定义的距离函数计算每个生成样本与训练数据之间的距离
+
         # print(train_data.shape)
         # print(W.shape)
         distances = custom_distance(train_data, W, numerical_col_names, categorical_col_names)
         # print(distances)
         # print(distances.shape)
-        # jjj
-        # 找到最小和第二小的距离
+
         min_index = np.argmin(distances)
         min_distance = distances[min_index]
-        distances[min_index] = np.inf  # 设置为无穷大，以便找到下一个最小值
+        distances[min_index] = np.inf
         second_min_index = np.argmin(distances)
         second_min_distance = distances[second_min_index]
 
-        # 计算距离比例
+
         ratio = min_distance / second_min_distance
 
-        # 判断W是否应标记为复制品
         if ratio < 1 / 3:
             replicate_count += 1
 
-    # 计算复制品比例
+
     replicate_ratio = replicate_count / len(generated_data)
     print(f"Percent of replicate: {replicate_ratio:.2%}")
     return replicate_ratio
@@ -375,7 +271,7 @@ def sample(
     syn_df.to_csv(save_path, index=False)
 
 
-def sample_main(args):
+def sample_main(args, num_samples):
     dataname = args.dataname
     device = f'cuda:{args.gpu}'
 
@@ -395,7 +291,7 @@ def sample_main(args):
     print('START SAMPLING')
 
     sample(
-        num_samples=raw_config['sample']['num_samples'],
+        num_samples=num_samples,
         batch_size=raw_config['sample']['batch_size'],
         disbalance=raw_config['sample'].get('disbalance', None),
         **raw_config['diffusion_params'],
@@ -480,15 +376,16 @@ class Trainer:
         best_loss = np.inf
         dataname = self.args.dataname
         if dataname == 'default':
-            self.steps = 100000
+            self.steps = 15000
         else:
             self.steps = 100000
         print('Steps: ', self.steps)
-        real_data_path = f'data/{dataname}/train.csv'
+        real_data_path = f'data/{dataname}/train_100.csv'
         sample_save_path = self.args.save_path
         print(real_data_path)
         print(sample_save_path)
         print(self.args)
+
         replicate_ratio_list, epoch_list = [], []
         batch_size = 1024
         real_df = pd.read_csv(real_data_path)
@@ -536,31 +433,31 @@ class Trainer:
 
                 # epoch = ((step + 1) * batch_size) // num_samples
 
-                if (step + 1) % need_steps == 0:
-                    print(f'Epoch: {epoch}')
-                    sample_main(self.args)  # sample data
-                    cur_replicate_ratio = cal_memorization(dataname, sample_save_path, real_data_path)
-                    replicate_ratio_list.append(cur_replicate_ratio)
-                    epoch_list.append(epoch)
-                    cur_data = {
-                        'Epoch': epoch_list,
-                        'Replicate Ratio': replicate_ratio_list
-                    }
+                # if (step + 1) % need_steps == 0:
+                #     print(f'Epoch: {epoch}')
+                #     sample_main(self.args)  # sample data
+                #     cur_replicate_ratio = cal_memorization(dataname, sample_save_path, real_data_path)
+                #     replicate_ratio_list.append(cur_replicate_ratio)
+                #     epoch_list.append(epoch)
+                #     cur_data = {
+                #         'Epoch': epoch_list,
+                #         'Replicate Ratio': replicate_ratio_list
+                #     }
+                #
 
-                    # 将字典转换为 DataFrame
-                    df = pd.DataFrame(cur_data)
-                    epoch += 10
-                    # 保存 DataFrame 为 CSV 文件
-                    memo_save_path = f'sample/{dataname}/TabDDPM_{dataname}_ratio.csv'
-                    df.to_csv(memo_save_path, index=False)
-                    print(f'Saved replicate ratios and epochs to {memo_save_path}')
+                #     df = pd.DataFrame(cur_data)
+                #     epoch += 10
+
+                #     memo_save_path = f'sample/{dataname}/TabDDPM_{dataname}_ratio.csv'
+                #     df.to_csv(memo_save_path, index=False)
+                #     print(f'Saved replicate ratios and epochs to {memo_save_path}')
 
             # update_ema(self.ema_model.parameters(), self.diffusion._denoise_fn.parameters())
 
             step += 1
-        # sample_main(self.args)  # sample data
-        # cur_replicate_ratio = cal_memorization(dataname, sample_save_path, real_data_path)
-        # print('cur_replicate_ratio', cur_replicate_ratio)
+        sample_main(self.args, num_samples)  # sample data
+        cur_replicate_ratio = cal_memorization(dataname, sample_save_path, real_data_path)
+        print('cur_replicate_ratio', cur_replicate_ratio)
             # end_time = time.time()
             # print('Time: ', end_time - start_time)
 
