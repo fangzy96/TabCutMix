@@ -55,7 +55,7 @@ python process_dataset.py
 ## Training Models
 
 For baseline methods, use the following command for training:
-跑下面这一行就好，最后结果会存在sample/dataname/下面。只需要跑tabddpm在 adult, default, shoppers, magic。
+
 ```
 python main.py --dataname [NAME_OF_DATASET] --method [NAME_OF_BASELINE_METHODS] --mode train
 ```
@@ -114,30 +114,4 @@ python eval/eval_quality.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] -
 python eval/eval_mle.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] --path [PATH_TO_SYNTHETIC_DATA]
 ```
 
-#### Pricavy protection: Distance to Closest Record (DCR)
-
-```
-python eval/eval_dcr.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] --path [PATH_TO_SYNTHETIC_DATA]
-```
-
-Note: the optimal DCR score depends on the ratio between #Train and #Holdout (# Test). Ideally, DCR sore should be #Train / (#Train + #Holdout). To let the optimal score be $50\%$, you have to let the training and testing set have the same size. 
-
-#### Detection: Classifier Two Sample Tests (C2ST)
-
-```
-python eval/eval_detection.py --dataname [NAME_OF_DATASET] --model [METHOD_NAME] --path [PATH_TO_SYNTHETIC_DATA]
-```
-
-#### Missing Value Imputation for the Target Column
-
-```
-python impute.py --dataname [NAME_OF_DATASET]
-```
-The imputed tale will be saved at impute/[NAME_OF_DATASET]
-
-To evaluate the imputed target column regarding the classification task, use the following command:
-
- ```
-python eval_impute.py --dataname adult
-```
 
