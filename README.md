@@ -1,10 +1,6 @@
 # (ICLR 2025 Submission) Unveiling Memorization in Diffusion Models for Tabular Data
 
-## Acknowledgements
-
-This project was built upon code from [TabSyn](https://github.com/amazon-science/tabsyn). We are deeply grateful for their open-source contributions, which have significantly helped shape the development of this project.
-
-Specifically, many of the model components in this repository are based on the foundation provided by [TabSyn](https://github.com/amazon-science/tabsyn). We highly recommend checking out their work for further insights.
+Tabular data generation has attracted significant research interest in recent years, with the tabular diffusion models greatly improving the quality of synthetic data. However, while memorization—where models inadvertently replicate exact or near-identical training data—has been thoroughly investigated in image and text generation, its effects on tabular data remain largely unexplored. In this paper, we conduct the first comprehensive investigation of memorization phenomena in diffusion models for tabular data. Our empirical analysis reveals that memorization appears in tabular diffusion models and increases with larger training epochs. We further examine the influence of factors such as dataset sizes, feature dimensions, and different diffusion models on memorization. Additionally, we provide a theoretical explanation for why memorization occurs in tabular diffusion models. To address this issue, we propose TabCutMix, a simple yet effective data augmentation technique that exchanges randomly selected feature segments between random training sample pairs. Experimental results across various datasets and diffusion models demonstrate that TabCutMix effectively mitigates memorization while maintaining high-quality data generation.
 
 
 ## Installing Dependencies
@@ -150,3 +146,8 @@ python plot_shape_bar.py
 python case_study.py
 ```
 
+## Acknowledgements
+
+This project was built upon code from [TabSyn](https://github.com/amazon-science/tabsyn). We are deeply grateful for their open-source contributions, which have significantly helped shape the development of this project.
+
+Specifically, many of the model components in this repository are based on the foundation provided by [TabSyn](https://github.com/amazon-science/tabsyn). We highly recommend checking out their work for further insights.
