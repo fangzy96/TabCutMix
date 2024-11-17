@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+import argparse
 
 def custom_distance(X, Y, numerical_cols, categorical_cols):
 
@@ -30,8 +31,10 @@ def custom_distance(X, Y, numerical_cols, categorical_cols):
 
 def cal_memorization(dataname, generated_path, train_data):
 
-    generated_data = pd.read_csv(generated_path)[:1]
-    train_data = train_data[:1]
+    generated_data = pd.read_csv(generated_path)
+    train_data = train_data
+    print(generated_data.head())
+    print(train_data.head())
 
     column_indices = {
         'magic': {
@@ -64,9 +67,11 @@ def cal_memorization(dataname, generated_path, train_data):
 
     replicate_count = 0
 
-
+    # print(train_data.shape)
+    # print(generated_data.shape)
     for index, W in generated_data.iterrows():
         distances = custom_distance(train_data, W, numerical_col_names, categorical_col_names)
+        # print(distances)
         min_index = np.argmin(distances)
         min_distance = distances[min_index]
         distances[min_index] = np.inf
@@ -74,7 +79,6 @@ def cal_memorization(dataname, generated_path, train_data):
         second_min_distance = distances[second_min_index]
 
         ratio = min_distance / second_min_distance
-
 
         if ratio < 1 / 3:
             replicate_count += 1
@@ -85,15 +89,31 @@ def cal_memorization(dataname, generated_path, train_data):
 
 
 def main():
-    datasets = ['shoppers']
+    # 设置命令行参数解析
+    parser = argparse.ArgumentParser(description="Run memorization calculation for a given dataset and model.")
+    parser.add_argument("--dataset", type=str, required=True, help="Name of the dataset (e.g., shoppers).")
+    parser.add_argument("--model", type=str, required=True, help="Name of the model (e.g., tabsyn).")
 
-    for dataset in datasets:
-        generated_path = f'synthetic/{dataset}/tabsyn.csv'
-        train_data_path = f'synthetic/{dataset}/real_100.csv'
+    # 解析命令行参数
+    args = parser.parse_args()
+    dataset = args.dataset
+    model = args.model
+
+    # 文件路径设置
+    generated_path = f'synthetic/{dataset}/{model}.csv'
+    train_data_path = f'synthetic/{dataset}/real.csv'
+
+    # 读取数据
+    try:
         train_data = pd.read_csv(train_data_path)
+    except FileNotFoundError:
+        print(f"Error: Train data file not found at {train_data_path}")
+        return
 
+    try:
         cal_memorization(dataset, generated_path, train_data)
-
+    except Exception as e:
+        print(f"Error occurred during memorization calculation: {e}")
 
 if __name__ == "__main__":
     main()
