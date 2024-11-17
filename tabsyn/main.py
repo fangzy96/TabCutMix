@@ -192,7 +192,7 @@ def main(args):
         num_workers=4,
     )
 
-    num_epochs = 1000 + 1
+    num_epochs = 10000 + 1
 
     denoise_fn = MLPDiffusion(in_dim, 1024).to(device)
     print(denoise_fn)
@@ -239,31 +239,30 @@ def main(args):
         if curr_loss < best_loss:
             best_loss = curr_loss
             patience = 0
-            # torch.save(model.state_dict(), f'{ckpt_path}/model.pt')
-        # else:
-        #     patience += 1
-        #     if patience == 2000:
-        #         print('Early stopping')
-        #         break
+            torch.save(model.state_dict(), f'{ckpt_path}/model.pt')
+        else:
+            patience += 1
+            if patience == 2000:
+                print('Early stopping')
+                break
 
-        if epoch % 10 == 0:
-            torch.save(model.state_dict(), f'{ckpt_path}/model_{epoch}.pt')
-            cur_dataname, cur_save_path = generate_sample(sample_args, model, epoch, num_generate)
-            # test memorization
-            cur_replicate_ratio = cal_memorization(cur_dataname, cur_save_path, train_data_100)
-            replicate_ratio_list.append(cur_replicate_ratio)
-            epoch_list.append(epoch)
-            cur_data = {
-                'Epoch': epoch_list,
-                'Replicate Ratio': replicate_ratio_list
-            }
+        # if epoch % 10 == 0:
+        # torch.save(model.state_dict(), f'{ckpt_path}/model_{epoch}.pt')
+    cur_dataname, cur_save_path = generate_sample(sample_args, model, epoch, num_generate)
+    # test memorization
+    cur_replicate_ratio = cal_memorization(cur_dataname, cur_save_path, train_data_100)
+    replicate_ratio_list.append(cur_replicate_ratio)
+    epoch_list.append(epoch)
+    cur_data = {
+        'Epoch': epoch_list,
+        'Replicate Ratio': replicate_ratio_list
+    }
 
+    df = pd.DataFrame(cur_data)
 
-            df = pd.DataFrame(cur_data)
-
-            memo_save_path = f'sample/{cur_dataname}/{cur_dataname}_ratio.csv'
-            df.to_csv(memo_save_path, index=False)
-            print(f'Saved replicate ratios and epochs to {memo_save_path}')
+    memo_save_path = f'sample/{cur_dataname}/{cur_dataname}_ratio.csv'
+    df.to_csv(memo_save_path, index=False)
+    print(f'Saved replicate ratios and epochs to {memo_save_path}')
 
     end_time = time.time()
     print('Time: ', end_time - start_time)
