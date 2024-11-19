@@ -166,7 +166,7 @@ def main(args):
     sample_args = create_sample_args(args)
     device = args.device
     dataname = args.dataname
-    train_100_path = f'data/{dataname}/train_100.csv'
+    train_100_path = f'synthetic/{dataname}/real.csv'
     train_data_100 = pd.read_csv(train_100_path)
     num_generate = train_data_100.shape[0]
 
