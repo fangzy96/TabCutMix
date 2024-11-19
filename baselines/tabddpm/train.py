@@ -380,7 +380,7 @@ class Trainer:
         else:
             self.steps = 100000
         print('Steps: ', self.steps)
-        real_data_path = f'data/{dataname}/train_100.csv'
+        real_data_path = f'synthetic/{dataname}/real.csv'
         sample_save_path = self.args.save_path
         print(real_data_path)
         print(sample_save_path)
