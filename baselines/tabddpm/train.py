@@ -380,15 +380,15 @@ class Trainer:
         else:
             self.steps = 100000
         print('Steps: ', self.steps)
-        real_data_path = f'synthetic/{dataname}/real.csv'
+        cal_memo_real_data_path = f'synthetic/{dataname}/real.csv'
         sample_save_path = self.args.save_path
-        print(real_data_path)
+        print(cal_memo_real_data_path)
         print(sample_save_path)
         print(self.args)
 
         replicate_ratio_list, epoch_list = [], []
         batch_size = 1024
-        real_df = pd.read_csv(real_data_path)
+        real_df = pd.read_csv(cal_memo_real_data_path)
         num_samples = real_df.shape[0]
         need_steps = (num_samples // batch_size)*10
 
@@ -456,7 +456,7 @@ class Trainer:
 
             step += 1
         sample_main(self.args, num_samples)  # sample data
-        cur_replicate_ratio = cal_memorization(dataname, sample_save_path, real_data_path)
+        cur_replicate_ratio = cal_memorization(dataname, sample_save_path, cal_memo_real_data_path)
         print('cur_replicate_ratio', cur_replicate_ratio)
             # end_time = time.time()
             # print('Time: ', end_time - start_time)
