@@ -1,0 +1,14 @@
+{
+    "name": "Churn_Modelling",
+    "task_type": "binclass",
+    "header": "infer",
+    "column_names": null,
+    "num_col_idx": [0,3,4,5,6,9],
+    "cat_col_idx": [1,2,7,8],
+    "target_col_idx": [10],
+
+    "file_type": "csv",
+    "data_path": "data/Churn_Modelling/Churn_Modelling.csv",
+    "test_path": null
+}
+

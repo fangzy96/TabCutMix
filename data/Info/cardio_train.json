@@ -1,0 +1,14 @@
+{
+    "name": "cardio_train",
+    "task_type": "binclass",
+    "header": "infer",
+    "column_names": null,
+    "num_col_idx": [0,2,3,4,5],
+    "cat_col_idx": [1,6,7,8,9,10],
+    "target_col_idx": [11],
+
+    "file_type": "csv",
+    "data_path": "data/cardio_train/cardio_train.csv",
+    "test_path": null
+}
+
