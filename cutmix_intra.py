@@ -39,18 +39,7 @@ def cutmix_tabular(data_df, label_column_idx, num_generate):
 
 
 def cutmix_tabular_cluster(data_df, label_column_idx, num_generate, subset):
-    """
-    在输入数据上应用 CutMix 方法，结合特征聚类。
 
-    参数:
-    - data_df: pandas DataFrame, 原始数据。
-    - label_column_idx: int, 标签列的索引。
-    - num_generate: int, 要生成的样本数量。
-    - subset: List[List[int]], 特征聚类结果，每个子列表表示一个特征集合。
-
-    返回:
-    - expanded_data: pandas DataFrame, 原始数据和新生成样本的组合。
-    """
     # 获取子集数量
     # print('data_df', data_df)
     num_subsets = len(subset)
