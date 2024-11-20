@@ -36,7 +36,7 @@ def main(args):
     start_time = time.time()
 
     # num_samples = train_z.shape[0]
-    train_100_path = f'data/{dataname}/train_100.csv'
+    train_100_path = f'synthetic/{dataname}/real.csv'
     train_data_100 = pd.read_csv(train_100_path)
     num_samples = train_data_100.shape[0]
     sample_dim = in_dim
