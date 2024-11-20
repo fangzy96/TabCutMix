@@ -1,22 +1,27 @@
 import numpy as np
+import torch 
 import pandas as pd
 import os 
+import sys
 
 import json
+import pickle
 
 # Metrics
-from sdmetrics.reports.single_table import QualityReport, DiagnosticReport
+from sdmetrics import load_demo
+from sdmetrics.single_table import LogisticDetection
 
+from matplotlib import pyplot as plt
 
 import argparse
+import warnings
+warnings.filterwarnings("ignore")
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--dataname', type=str, default='adult')
-parser.add_argument('--model', type=str, default='tabsyn')
-parser.add_argument('--path', type=str, default = None, help='The file path of the synthetic data')
+parser.add_argument('--model', type=str, default='real')
 
 args = parser.parse_args()
-
 
 def reorder(real_data, syn_data, info):
     num_col_idx = info['num_col_idx']
@@ -64,11 +69,7 @@ if __name__ == '__main__':
     dataname = args.dataname
     model = args.model
 
-    if not args.path:
-        syn_path = f'synthetic/{dataname}/{model}.csv'
-    else:
-        syn_path = args.path
-
+    syn_path = f'synthetic/{dataname}/{model}.csv'
     real_path = f'synthetic/{dataname}/real.csv'
 
     data_dir = f'data/{dataname}' 
@@ -92,29 +93,12 @@ if __name__ == '__main__':
 
     new_real_data, new_syn_data, metadata = reorder(real_data, syn_data, info)
 
-    qual_report = QualityReport()
-    qual_report.generate(new_real_data, new_syn_data, metadata)
+    # qual_report.generate(new_real_data, new_syn_data, metadata)
 
-    diag_report = DiagnosticReport()
-    diag_report.generate(new_real_data, new_syn_data, metadata)
+    score = LogisticDetection.compute(
+        real_data=new_real_data,
+        synthetic_data=new_syn_data,
+        metadata=metadata
+    )
 
-    quality =  qual_report.get_properties()
-    diag = diag_report.get_properties()
-
-    Shape = quality['Score'][0]
-    Trend = quality['Score'][1]
-
-    with open(f'{save_dir}/quality.txt', 'w') as f:
-        f.write(f'{Shape}\n')
-        f.write(f'{Trend}\n')
-
-    Quality = (Shape + Trend) / 2
-
-    shapes = qual_report.get_details(property_name='Column Shapes')
-    trends = qual_report.get_details(property_name='Column Pair Trends')
-    # coverages = diag_report.get_details('Coverage')
-
-
-    shapes.to_csv(f'{save_dir}/shape.csv')
-    trends.to_csv(f'{save_dir}/trend.csv')
-    # coverages.to_csv(f'{save_dir}/coverage.csv')
+    print(f'{dataname}, {model}: {score}')

@@ -32,7 +32,7 @@ if __name__ == '__main__':
         syn_path = f'synthetic/{dataname}/{model}.csv'
     else:
         syn_path = args.path
-    real_path = f'synthetic/{dataname}/real_100.csv'
+    real_path = f'synthetic/{dataname}/real.csv'
 
     data_dir = f'data/{dataname}' 
 
