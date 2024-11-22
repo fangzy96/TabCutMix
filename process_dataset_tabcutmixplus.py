@@ -307,7 +307,25 @@ def process_data(name):
         train_df, test_df, seed = train_val_test_split(data_df, cat_columns, num_train, num_test)
         # print(data_df)
         # print(train_df)
-    train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
+
+    # 检查 name 并设置列名
+    if name == 'magic':
+        temp_train_df = train_df.copy()
+        temp_train_df.columns = ['Length', 'Width', 'Size', 'Conc', 'Conc1',
+                            'Asym', 'M3Long', 'M3Trans', 'Alpha', 'Dist', 'class']
+
+        # 保存文件
+        temp_train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
+    elif name == 'adult':
+        temp_train_df = train_df.copy()
+        temp_train_df.columns = ['age', 'workclass', 'fnlwgt', 'education', 'education.num',
+                        'marital.status', 'occupation', 'relationship', 'race', 'sex',
+                        'capital.gain', 'capital.loss', 'hours.per.week', 'native.country', 'income']
+
+        # 保存文件
+        temp_train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
+    else:
+        train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
     """ cutmix """
     print(data_df.columns)
     print(train_df.shape)
@@ -493,7 +511,7 @@ if __name__ == "__main__":
     if args.dataname:
         process_data(args.dataname)
     else:
-        for name in ['Churn_Modelling', 'cardio_train', 'wilt', 'MiniBooNE']:
+        for name in ['adult', 'default', 'shoppers', 'magic']:
         # for name in ['magic']:
             process_data(name)
 
