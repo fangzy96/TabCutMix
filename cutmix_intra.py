@@ -1,7 +1,127 @@
 import pandas as pd
 import numpy as np
 import random
+from sklearn.neighbors import NearestNeighbors
+from collections import Counter
 
+column_indices = {
+        'magic': {
+            'numerical': [0,1,2,3,4,5,6,7,8,9],
+            'categorical': [10]
+        },
+        'shoppers': {
+            'numerical': [0,1,2,3,4,5,6,7,8,9],
+            'categorical': [10,11,12,13,14,15,16,17]
+        },
+        'adult': {
+            'numerical': [0,2,4,10,11,12],
+            'categorical': [1,3,5,6,7,8,9,13,14]
+        },
+        'default': {
+            'numerical': [0,4,11,12,13,14,15,16,17,18,19,20,21,22],
+            'categorical': [1,2,3,5,6,7,8,9,10,23]
+        },
+        'Churn_Modelling': {
+            'numerical': [0,3,4,5,6,9],
+            'categorical': [1,2,7,8,10]
+        },
+        'cardio_train': {
+            'numerical': [0,2,3,4,5],
+            'categorical': [1,6,7,8,9,10,11]
+        },
+        'wilt': {
+            'numerical': [1,2,3,4,5],
+            'categorical': [0]
+        },
+        'MiniBooNE': {
+            'numerical': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49],
+            'categorical': [0]
+        }
+    }
+
+def smote_tabular(data_df, label_column_idx, name, num_generate, k_neighbors=5):
+    """
+    Custom SMOTE implementation for tabular data with numerical and categorical features.
+
+    Parameters:
+        data_df (pd.DataFrame): Input dataset.
+        label_column_idx (int): Index of the label column.
+        num_generate (int): Number of samples to generate.
+        k_neighbors (int): Number of nearest neighbors for interpolation.
+
+    Returns:
+        pd.DataFrame: Expanded dataset with synthetic samples.
+    """
+    # Validate dataset name and retrieve column indices
+    if name not in column_indices:
+        raise ValueError(f"Dataset '{name}' is not defined in column_indices.")
+
+    numerical_indices = column_indices[name]['numerical']
+    categorical_indices = column_indices[name]['categorical']
+
+    # Separate labels and features
+    labels = data_df.iloc[:, label_column_idx]
+    features = data_df
+
+    # Extract categorical and numerical columns based on indices
+    categorical_columns = features.iloc[:, categorical_indices].columns
+    numerical_columns = features.iloc[:, numerical_indices].columns
+
+
+    # Convert categorical columns to category type for consistency
+    for col in categorical_columns:
+        features[col] = features[col].astype('category')
+
+    # Initialize the result list
+    new_samples = []
+
+    # Identify minority class
+    label_counts = Counter(labels)
+    minority_class = min(label_counts, key=label_counts.get)
+
+    # Filter samples belonging to the minority class
+    minority_samples = data_df[data_df.iloc[:, label_column_idx] == minority_class]
+
+    # Use Nearest Neighbors to find similar samples within the minority class
+    minority_features = minority_samples.iloc[:, numerical_indices]
+    nn = NearestNeighbors(n_neighbors=k_neighbors + 1).fit(minority_features)
+    neighbors = nn.kneighbors(minority_features, return_distance=False)
+
+    # Generate synthetic samples
+    for _ in range(num_generate):
+        # Select a random sample from the minority class
+        idx = random.choice(range(len(minority_samples)))
+        base_sample = minority_samples.iloc[idx]
+
+        # Select a random neighbor
+        neighbor_idx = random.choice(neighbors[idx][1:])
+        neighbor_sample = minority_samples.iloc[neighbor_idx]
+
+        # Interpolate numerical features
+        lambda_value = np.random.uniform(0, 1)
+        new_sample_num = (
+                lambda_value * base_sample[numerical_columns] +
+                (1 - lambda_value) * neighbor_sample[numerical_columns]
+        )
+
+        # Handle categorical features
+        new_sample_cat = base_sample[categorical_columns].copy()
+        for col in categorical_columns:
+            if random.random() < 0.5:
+                new_sample_cat[col] = neighbor_sample[col]
+
+        # Combine numerical, categorical, and label features
+        new_sample = pd.concat([new_sample_num, new_sample_cat])
+        new_sample[data_df.columns[label_column_idx]] = minority_class
+        new_samples.append(new_sample)
+
+    # Convert new samples to a DataFrame
+    new_samples_df = pd.DataFrame(new_samples)
+
+    # Combine the original data with the synthetic samples
+    expanded_data = pd.concat([data_df, new_samples_df], ignore_index=True)
+
+    return expanded_data
 
 def cutmix_tabular(data_df, label_column_idx, num_generate):
 
