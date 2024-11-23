@@ -3,6 +3,7 @@ import numpy as np
 import random
 from sklearn.neighbors import NearestNeighbors
 from collections import Counter
+from sklearn.preprocessing import OneHotEncoder
 
 column_indices = {
         'magic': {
@@ -39,6 +40,73 @@ column_indices = {
         }
     }
 
+def mixup_tabular(data_df, name, num_generate, alpha=0.4):
+    """
+    Mixup implementation for tabular data with numerical and categorical features, treating the label as a categorical feature.
+
+    Parameters:
+        data_df (pd.DataFrame): Input dataset.
+        name (str): Name of the dataset to retrieve column indices.
+        alpha (float): Mixup interpolation parameter.
+
+    Returns:
+        pd.DataFrame: Dataset with mixed samples.
+    """
+    # Validate dataset name and retrieve column indices
+    if name not in column_indices:
+        raise ValueError(f"Dataset '{name}' is not defined in column_indices.")
+
+    numerical_indices = column_indices[name]['numerical']
+    categorical_indices = column_indices[name]['categorical']
+
+    # Combine all feature indices (numerical + categorical)
+    all_feature_indices = numerical_indices + categorical_indices
+
+    # Separate numerical and categorical columns
+    numerical_columns = data_df.iloc[:, numerical_indices]
+    categorical_columns = data_df.iloc[:, categorical_indices]
+
+    # One-hot encode categorical features
+    encoder = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
+    onehot_encoded = encoder.fit_transform(categorical_columns)
+    print(onehot_encoded.shape)
+    print(numerical_columns.shape)
+    # Combine numerical and one-hot encoded categorical features
+    combined_features = np.hstack([numerical_columns.values, onehot_encoded])
+    print(combined_features.shape)
+    # Initialize result list for mixed samples
+    mixed_samples = []
+
+    for _ in range(num_generate):
+        # Select two random samples
+        # print(combined_features.shape)
+        # Ensure indices are selected within the valid range of combined_features
+        idx1, idx2 = np.random.choice(combined_features.shape[0], size=2, replace=False)
+
+        sample1 = combined_features[idx1]
+        sample2 = combined_features[idx2]
+
+        # Generate mixup coefficient
+        lambda_value = np.random.beta(alpha, alpha)
+
+        # Interpolate features
+        mixed_features = lambda_value * sample1 + (1 - lambda_value) * sample2
+        # print(mixed_features.shape)
+        # Decode one-hot back to categorical values for categorical features
+        num_features = len(numerical_indices)
+        # print(num_features)
+        # print(mixed_features[num_features:].reshape(1, -1).shape)
+        onehot_decoded = encoder.inverse_transform(mixed_features[num_features:].reshape(1, -1))
+        # print(onehot_decoded[0])
+        # Combine back to DataFrame format
+        mixed_sample = list(mixed_features[:num_features]) + list(onehot_decoded[0])
+        mixed_samples.append(mixed_sample)
+
+    # Combine mixed samples with original data
+    mixed_samples_df = pd.DataFrame(mixed_samples, columns=list(numerical_columns.columns) + list(categorical_columns.columns))
+
+    # Return the expanded dataset
+    return pd.concat([data_df, mixed_samples_df], ignore_index=True)
 def smote_tabular(data_df, label_column_idx, name, num_generate, k_neighbors=5):
     """
     Custom SMOTE implementation for tabular data with numerical and categorical features.
