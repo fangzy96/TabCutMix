@@ -168,7 +168,7 @@ def train_val_test_split(data_df, cat_columns, num_train = 0, num_test = 0):
     idx = np.arange(total_num)
 
 
-    seed = 82
+    seed = 102
 
     while True:
         np.random.seed(seed)
@@ -511,7 +511,7 @@ if __name__ == "__main__":
     if args.dataname:
         process_data(args.dataname)
     else:
-        for name in ['adult', 'default', 'shoppers', 'magic']:
+        for name in ['adult', 'shoppers', 'default', 'magic', 'Churn_Modelling', 'cardio_train', 'wilt', 'MiniBooNE']:
         # for name in ['magic']:
             process_data(name)
 

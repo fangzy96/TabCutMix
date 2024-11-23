@@ -493,7 +493,7 @@ if __name__ == "__main__":
     if args.dataname:
         process_data(args.dataname)
     else:
-        for name in ['Churn_Modelling', 'cardio_train', 'wilt', 'MiniBooNE']:
+        for name in ['adult', 'shoppers', 'default', 'magic', 'Churn_Modelling', 'cardio_train', 'wilt', 'MiniBooNE']:
         # for name in ['magic']:
             process_data(name)
 
