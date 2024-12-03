@@ -40,18 +40,90 @@ column_indices = {
         }
     }
 
+
+def baseline_augmentation(data_df, dataset_name, label_column_idx, num_generate):
+
+    new_samples = pd.DataFrame(columns=data_df.columns)
+    # print('new_samples', new_samples)
+    if dataset_name not in column_indices:
+        raise ValueError(f"Dataset '{dataset_name}' not found in column_indices.")
+
+    numerical_cols = column_indices[dataset_name]['numerical']
+    categorical_cols = column_indices[dataset_name]['categorical']
+
+    # Learn distributions for numerical features
+    numerical_distributions = {}
+    for col in numerical_cols:
+        col_data = data_df.iloc[:, col]
+        mean, std = col_data.mean(), col_data.std()
+        numerical_distributions[col] = (mean, std)
+
+    # Learn frequencies for categorical features
+    categorical_frequencies = {}
+    for col in categorical_cols:
+        freq = data_df.iloc[:, col].value_counts(normalize=True)
+        categorical_frequencies[col] = freq
+
+    for _ in range(num_generate):
+        new_sample = data_df.iloc[0].copy()  # Initialize new sample
+
+        # Sample numerical features
+        for col in numerical_cols:
+            mean, std = numerical_distributions[col]
+            new_sample.iloc[col] = np.random.normal(mean, std)
+
+        # Sample categorical features
+        for col in categorical_cols:
+            probabilities = categorical_frequencies[col]
+            new_sample.iloc[col] = np.random.choice(probabilities.index, p=probabilities.values)
+
+        # Keep label unchanged by randomly sampling a label from the dataset
+        new_sample.iloc[label_column_idx] = data_df.iloc[:, label_column_idx].sample(1).iloc[0]
+
+        # Append the new sample
+        new_samples = pd.concat([new_samples, pd.DataFrame([new_sample])], ignore_index=True)
+
+    # Combine the original dataset with the new samples
+    augmented_data = pd.concat([data_df, new_samples], ignore_index=True)
+
+    return augmented_data
+
+def generate_syn_sample(data, dataset_name, num_sample=50, num_iterations=100):
+
+    if dataset_name not in column_indices:
+        raise ValueError(f"Dataset '{dataset_name}' not found in column_indices.")
+
+
+    numerical_cols = column_indices[dataset_name]['numerical']
+    categorical_cols = column_indices[dataset_name]['categorical']
+    all_cols = numerical_cols + categorical_cols
+
+    generated_samples = []
+
+    for _ in range(num_iterations):
+
+        base_samples = data.sample(num_sample)
+
+        for _, base_sample in base_samples.iterrows():
+            base_sample = base_sample.copy()
+
+
+            chosen_col = random.choice(all_cols)
+
+
+            if chosen_col in numerical_cols:
+                base_sample[chosen_col] *= 10
+            elif chosen_col in categorical_cols:
+                base_sample[chosen_col] = 'unknown'
+
+
+            generated_samples.append(base_sample)
+
+    generated_df = pd.DataFrame(generated_samples)
+    return generated_df
+
 def mixup_tabular(data_df, name, num_generate, alpha=0.4):
-    """
-    Mixup implementation for tabular data with numerical and categorical features, treating the label as a categorical feature.
 
-    Parameters:
-        data_df (pd.DataFrame): Input dataset.
-        name (str): Name of the dataset to retrieve column indices.
-        alpha (float): Mixup interpolation parameter.
-
-    Returns:
-        pd.DataFrame: Dataset with mixed samples.
-    """
     # Validate dataset name and retrieve column indices
     if name not in column_indices:
         raise ValueError(f"Dataset '{name}' is not defined in column_indices.")
@@ -108,18 +180,7 @@ def mixup_tabular(data_df, name, num_generate, alpha=0.4):
     # Return the expanded dataset
     return pd.concat([data_df, mixed_samples_df], ignore_index=True)
 def smote_tabular(data_df, label_column_idx, name, num_generate, k_neighbors=5):
-    """
-    Custom SMOTE implementation for tabular data with numerical and categorical features.
 
-    Parameters:
-        data_df (pd.DataFrame): Input dataset.
-        label_column_idx (int): Index of the label column.
-        num_generate (int): Number of samples to generate.
-        k_neighbors (int): Number of nearest neighbors for interpolation.
-
-    Returns:
-        pd.DataFrame: Expanded dataset with synthetic samples.
-    """
     # Validate dataset name and retrieve column indices
     if name not in column_indices:
         raise ValueError(f"Dataset '{name}' is not defined in column_indices.")
@@ -228,44 +289,34 @@ def cutmix_tabular(data_df, label_column_idx, num_generate):
 
 def cutmix_tabular_cluster(data_df, label_column_idx, num_generate, subset):
 
-    # 获取子集数量
     # print('data_df', data_df)
     num_subsets = len(subset)
     new_samples = pd.DataFrame(columns=data_df.columns)
 
     for _ in range(num_generate):
-        # 随机生成 lambda 值
+
         lambda_value = np.random.uniform(0, 1)
-        # print(lambda_value)
-        # 随机选择第一个样本
         sample1 = data_df.sample(1).iloc[0]
 
-        # 根据第一个样本的标签找到相同标签的样本作为第二个样本
+
         sample1_label = sample1.iloc[label_column_idx]
         same_label_data = data_df[data_df.iloc[:, label_column_idx] == sample1_label]
         sample2 = same_label_data.sample(1).iloc[0]
 
-        # 计算需要混合的子集数量（基于子集的数量，而非特征总数）
         num_subsets_to_mix = int(lambda_value * num_subsets)
         # print('subset', subset)
-        # print('num_subsets', num_subsets)
-        # print('num_subsets_to_mix', num_subsets_to_mix)
 
-        # 随机选择要混合的子集
         mixed_subsets = random.sample(subset, min(num_subsets_to_mix, num_subsets))
         # print('mixed_subsets', mixed_subsets)
 
-        # 创建新样本
         new_sample = sample1.copy()
 
-        # 混合特征：处理被选中的子集
         switched_features = set()
         for group in mixed_subsets:
             # print('group', group)
             new_sample.iloc[group] = sample2.iloc[group]
             switched_features.update(group)
 
-        # 检查特征占比
         # total_features = set(range(data_df.shape[1]))
         # print('total_features', total_features)
         # sample1_features = total_features - switched_features
@@ -273,16 +324,15 @@ def cutmix_tabular_cluster(data_df, label_column_idx, num_generate, subset):
         # sample2_features = switched_features
         # print('sample2_features', sample2_features)
 
-        # 决定标签值
         # if len(sample1_features) > len(sample2_features):
         new_sample.iloc[label_column_idx] = sample1_label
         # else:
         #     new_sample.iloc[label_column_idx] = sample2.iloc[label_column_idx]
 
-        # 添加到新样本集中
+
         new_samples = pd.concat([new_samples, pd.DataFrame([new_sample])], ignore_index=True)
 
-    # 合并原始数据和新生成的数据
+
     expanded_data = pd.concat([data_df, new_samples], ignore_index=True)
 
     return expanded_data
