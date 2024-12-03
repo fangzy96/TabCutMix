@@ -28,7 +28,7 @@ args = parser.parse_args()
 
 
 def cramers_v(x, y):
-    """计算分类变量之间的相关性 Cramér's V"""
+
     contingency_table = pd.crosstab(x, y)
     chi2, _, _, _ = chi2_contingency(contingency_table)
     n = contingency_table.sum().sum()
@@ -41,7 +41,7 @@ def cramers_v(x, y):
 
 
 def eta_squared(categorical, numerical):
-    """计算分类与数值变量之间的相关性 ETA 系数的平方"""
+
     groups = categorical.unique()
     mean_total = numerical.mean()
     ss_total = sum((numerical - mean_total) ** 2)
@@ -51,27 +51,27 @@ def eta_squared(categorical, numerical):
 
 
 def compute_correlation(train_df):
-    """计算所有特征之间的相关性矩阵（数值、分类混合）"""
+
     columns = train_df.columns
     corr_matrix = pd.DataFrame(np.zeros((len(columns), len(columns))), columns=columns, index=columns)
 
     for i, col1 in enumerate(columns):
         for j, col2 in enumerate(columns):
-            if i >= j:  # 对称矩阵，不重复计算
+            if i >= j:
                 continue
 
             if train_df[col1].dtype in ['int64', 'float64'] and train_df[col2].dtype in ['int64', 'float64']:
-                # 数值特征之间使用皮尔逊相关系数
-                corr = abs(train_df[col1].corr(train_df[col2]))  # 取绝对值
+
+                corr = abs(train_df[col1].corr(train_df[col2]))
             elif train_df[col1].dtype == 'object' and train_df[col2].dtype == 'object':
-                # 分类特征之间使用 Cramér's V
-                corr = abs(cramers_v(train_df[col1], train_df[col2]))  # 取绝对值
+
+                corr = abs(cramers_v(train_df[col1], train_df[col2]))
             else:
-                # 数值与分类特征之间使用 ETA 系数
+
                 if train_df[col1].dtype == 'object':
-                    corr = np.sqrt(abs(eta_squared(train_df[col1], train_df[col2])))  # 取绝对值
+                    corr = np.sqrt(abs(eta_squared(train_df[col1], train_df[col2])))
                 else:
-                    corr = np.sqrt(abs(eta_squared(train_df[col2], train_df[col1])))  # 取绝对值
+                    corr = np.sqrt(abs(eta_squared(train_df[col2], train_df[col1])))
 
             corr_matrix.loc[col1, col2] = corr
             corr_matrix.loc[col2, col1] = corr
@@ -81,40 +81,33 @@ def compute_correlation(train_df):
 
 def preprocess_data(train_df):
 
-    # 检查每列数据类型
+
     for col in train_df.columns:
         if train_df[col].dtype == 'object':
-            # 对分类变量进行填充空值处理并编码为字符串
+
             train_df[col] = train_df[col].fillna("Unknown")
     return train_df
 
 
 def feature_clustering_mixed(train_df, column_names, threshold=0.8):
 
-    # 数据预处理
     train_df = preprocess_data(train_df)
 
-    # 计算相关性矩阵
     corr_matrix = compute_correlation(train_df)
-    corr_matrix = corr_matrix.clip(-1, 1)  # 强制将相关性限制在 -1 和 1 之间
+    corr_matrix = corr_matrix.clip(-1, 1)
     print(corr_matrix)
-    # 转换为距离矩阵 (1 - 相关性)，用于聚类
-    distance_matrix = 1 - corr_matrix.abs()  # 确保所有值为非负数
+
+    distance_matrix = 1 - corr_matrix.abs()
     # print(distance_matrix)
     condensed_distance = squareform(distance_matrix.values, checks=False)
-    # print(condensed_distance)
-    # 层次聚类
+
     linkage_matrix = linkage(condensed_distance, method='average')
-    # print(linkage_matrix)
-    # 根据阈值进行聚类
     clusters = fcluster(linkage_matrix, t=threshold, criterion='distance')
 
-    # 聚类结果整理
     cluster_dict = {}
     for idx, cluster_id in enumerate(clusters):
         cluster_dict.setdefault(cluster_id, []).append(corr_matrix.columns[idx])
 
-    # 打印每个子集和对应的相关性
     subsets = []
     for cluster_id, features in cluster_dict.items():
         print(f"Cluster {cluster_id}:")
@@ -168,7 +161,7 @@ def train_val_test_split(data_df, cat_columns, num_train = 0, num_test = 0):
     idx = np.arange(total_num)
 
 
-    seed = 82
+    seed = 102
 
     while True:
         np.random.seed(seed)
@@ -307,8 +300,22 @@ def process_data(name):
         train_df, test_df, seed = train_val_test_split(data_df, cat_columns, num_train, num_test)
         # print(data_df)
         # print(train_df)
-    train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
-    """ cutmix """
+
+    if name == 'magic':
+        temp_train_df = train_df.copy()
+        temp_train_df.columns = ['Length', 'Width', 'Size', 'Conc', 'Conc1',
+                                 'Asym', 'M3Long', 'M3Trans', 'Alpha', 'Dist', 'class']
+
+        temp_train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
+    elif name == 'adult':
+        temp_train_df = train_df.copy()
+        temp_train_df.columns = ['age', 'workclass', 'fnlwgt', 'education', 'education.num',
+                                 'marital.status', 'occupation', 'relationship', 'race', 'sex',
+                                 'capital.gain', 'capital.loss', 'hours.per.week', 'native.country', 'income']
+
+        temp_train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
+    else:
+        train_df.to_csv(f'synthetic/{name}/real.csv', index=False)
     print(data_df.columns)
     print(train_df.shape)
     print(type(train_df.shape[0]))
@@ -493,7 +500,7 @@ if __name__ == "__main__":
     if args.dataname:
         process_data(args.dataname)
     else:
-        for name in ['adult', 'shoppers', 'default', 'magic', 'Churn_Modelling', 'cardio_train', 'wilt', 'MiniBooNE']:
+        for name in ['adult', 'shoppers', 'default', 'magic']:
         # for name in ['magic']:
             process_data(name)
 
